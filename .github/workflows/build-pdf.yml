@@ -1,0 +1,28 @@
+name: Build PDF Report
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  convert_via_pandoc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build PDF
+        uses: docker://pandoc/latex:2.9
+        with:
+          args: >-
+            --output=Lab0-姓名-学号.pdf
+            --pdf-engine=xelatex
+            -V CJKmainfont="Noto Serif CJK SC"
+            --toc
+            report.md
+
+      - name: Upload PDF
+        uses: actions/upload-artifact@v3
+        with:
+          name: Lab0-PDF
+          path: Lab0-姓名-学号.pdf
