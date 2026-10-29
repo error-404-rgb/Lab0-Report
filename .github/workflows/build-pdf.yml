@@ -11,10 +11,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Chinese Fonts and Pandoc with LaTeX
+      - name: Install Chinese Fonts and Full LaTeX
         run: |
           sudo apt-get update
-          # 注意这里增加了 texlive-latex-extra，用于支持彩色框
           sudo apt-get install -y pandoc texlive-xetex texlive-lang-chinese texlive-latex-extra fonts-noto-cjk
 
       - name: Build PDF
