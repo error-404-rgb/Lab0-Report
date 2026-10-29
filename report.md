@@ -5,6 +5,7 @@ date: "2026年10月29日"
 geometry: margin=1in
 fontsize: 12pt
 linestretch: 1.5
+documentclass: article
 ---
 
 # 一、 实验环境配置过程与截图
@@ -37,16 +38,27 @@ objdump -S -M intel,i386 hello.o > hello-2.txt
 diff hello-1.txt hello-2.txt | head -n 40
 ```
 
-![反汇编结果差异对比](3_diff.png)
+终端输出的部分差异结果如下（左侧为可执行文件，右侧为目标文件）：
 
-<p align="center"><i>图 3：反汇编结果差异对比</i></p>
+```text
+< Disassembly of section .init:
+< 08049000 <_init>:
+<  8049000:	53                   	push   ebx
+<  8049001:	83 ec 08             	sub    esp,0x8
+...
+---
+> Disassembly of section .text:
+> 00000000 <test>:
+>    0:	55                   	push   ebp
+>    1:	89 e5                	mov    ebp,esp
+```
 
 **2. 结果分析**
 
 通过对比反汇编结果，发现可重定位目标文件（`.o`）和最终的可执行文件主要有以下区别：
 
-*   **外部函数调用地址不同**：在 `hello.o` 中，调用 `printf`、`malloc` 等外部函数时，`call` 指令后面的地址是 `0`（占位符），因为此时未链接。而在 `hello` 中，链接器已经将这些地址重定位为真实的虚拟内存地址。
-*   **段起始地址不同**：`hello.o` 的 `.text` 代码段起始偏移量通常从 `0x0` 开始；而最终的 `hello` 文件被分配了固定的虚拟地址（如 `0x08049000`）。
+> *   **外部函数调用地址不同**：在 `hello.o` 中，调用 `printf`、`malloc` 等外部函数时，`call` 指令后面的地址是 `0`（占位符），因为此时未链接。而在 `hello` 中，链接器已经将这些地址重定位为真实的虚拟内存地址（如 `0x804xxxx`）。
+> *   **段起始地址不同**：`hello.o` 的 `.text` 代码段起始偏移量通常从 `0x0` 开始；而最终的 `hello` 文件被分配了固定的虚拟地址（如 `0x08049000`）。
 
 \newpage
 
@@ -58,17 +70,18 @@ diff hello-1.txt hello-2.txt | head -n 40
 
 ![GDB 调试](4_gdb.png)
 
-<p align="center"><i>图 4：GDB 查找字符串内存地址</i></p>
+<p align="center"><i>图 3：GDB 查找字符串内存地址</i></p>
 
 **2. 使用 readelf 查找程序头表**
 
 执行 `readelf -l bar`，找到包含 `0x80b4014` 的 `LOAD` 段。记录该段的以下信息：
-*   文件偏移（Offset） = `0x06c000`
-*   虚拟地址（VirtAddr） = `0x080b4000`
+
+> *   文件偏移（Offset） = `0x06c000`
+> *   虚拟地址（VirtAddr） = `0x080b4000`
 
 ![readelf 查看段表](5_readelf.png)
 
-<p align="center"><i>图 5：readelf 查看程序头表</i></p>
+<p align="center"><i>图 4：readelf 查看程序头表</i></p>
 
 **3. 计算并验证文件偏移**
 
@@ -76,15 +89,21 @@ diff hello-1.txt hello-2.txt | head -n 40
 
 代入数据：`0x06c000 + (0x80b4014 - 0x080b4000) = 0x06c000 + 0x14 = 0x06c014`。
 
-使用 `xxd` 命令查看文件：
+使用 `xxd` 命令查看文件特定位置的数据：
 
 ```bash
 xxd -s 0x06c014 -l 16 bar
 ```
 
+输出结果成功显示了目标字符串：
+
+```text
+0006c014: 4865 6c6c 6f20 576f 726c 642e 0063 203d  Hello World..c =
+```
+
 ![xxd 验证](6_xxd.png)
 
-<p align="center"><i>图 6：xxd 验证成功找到 Hello World</i></p>
+<p align="center"><i>图 5：xxd 验证成功找到 Hello World</i></p>
 
 \newpage
 
