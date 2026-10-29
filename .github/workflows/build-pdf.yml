@@ -11,26 +11,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Chinese Fonts and Pandoc
+      - name: Install Chinese Fonts and Pandoc with LaTeX
         run: |
           sudo apt-get update
-          sudo apt-get install -y pandoc texlive-xetex texlive-lang-chinese fonts-noto-cjk
+          # 注意这里增加了 texlive-latex-extra，用于支持彩色框
+          sudo apt-get install -y pandoc texlive-xetex texlive-lang-chinese texlive-latex-extra fonts-noto-cjk
 
       - name: Build PDF
         run: |
-          pandoc report.md -o Lab0-姓名-学号.pdf \
+          pandoc report.md -o Lab0-范佳艺.pdf \
             --pdf-engine=xelatex \
             -V CJKmainfont="Noto Serif CJK SC" \
             -V mainfont="Noto Serif CJK SC" \
             -V monofont="Noto Sans Mono CJK SC" \
             --highlight-style=tango \
-            --toc \
-            -V colorlinks=true \
-            -V linkcolor=blue \
-            -V geometry:margin=2.5cm
+            -V colorlinks=true
 
       - name: Upload PDF
         uses: actions/upload-artifact@v4
         with:
           name: Lab0-PDF
-          path: Lab0-姓名-学号.pdf
+          path: Lab0-范佳艺.pdf
