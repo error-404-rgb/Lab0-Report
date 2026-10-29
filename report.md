@@ -19,7 +19,7 @@ header-includes:
 
 # 一、 实验环境配置
 
-先把虚拟机环境跑通。在 VirtualBox 设置好共享文件夹后，在 Ubuntu 终端里通过 `mount` 命令挂载到本地（这样宿主机和虚拟机就能互相传文件了）。接着把源码拷贝到本地目录，用老师提供的 Makefile 一键编译。
+先把虚拟机环境跑通。在 VirtualBox 设置好共享文件夹后，在 Ubuntu 终端里通过 `mount` 命令挂载到本地。接着把源码拷贝到本地目录，用老师提供的 Makefile 一键编译。
 
 ```bash
 cp /mnt/icslab/* .  # 把共享文件夹里的源码拷到当前目录
@@ -50,7 +50,7 @@ objdump -S -M intel,i386 hello.o > hello-2.txt
 diff hello-1.txt hello-2.txt | head -n 40
 ```
 
-截取了终端里输出的一部分差异（`<` 开头是最终文件，`>` 开头是 .o 文件）：
+截取了终端里输出的一部分差异（左边是最终文件，右边是 .o 文件）：
 
 ```text
 < Disassembly of section .init:
