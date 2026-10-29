@@ -6,23 +6,22 @@ on:
   workflow_dispatch:
 
 jobs:
-  convert_via_pandoc:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+
+      - name: Install Chinese Fonts and Pandoc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pandoc texlive-xetex texlive-lang-chinese fonts-noto-cjk
 
       - name: Build PDF
-        uses: docker://pandoc/latex:2.9
-        with:
-          args: >-
-            --output=Lab0-姓名-学号.pdf
-            --pdf-engine=xelatex
-            -V CJKmainfont="Noto Serif CJK SC"
-            --toc
-            report.md
+        run: |
+          pandoc report.md -o Lab0-姓名-学号.pdf --pdf-engine=xelatex -V CJKmainfont="Noto Sans CJK SC" --toc
 
       - name: Upload PDF
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Lab0-PDF
           path: Lab0-姓名-学号.pdf
