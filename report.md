@@ -6,10 +6,8 @@ geometry: margin=2.5cm
 fontsize: 12pt
 linestretch: 1.5
 header-includes:
-  - \usepackage{xcolor}
-  - \usepackage{tcolorbox}
   - \usepackage{hyperref}
-  - \hypersetup{colorlinks=true, linkcolor=blue!80!black, urlcolor=blue}
+  - \hypersetup{colorlinks=true, linkcolor=blue, urlcolor=blue}
 ---
 
 \tableofcontents
@@ -33,19 +31,13 @@ cp /mnt/icslab/* .  # 将源文件拷贝至当前目录
 make clean all      # 清理并重新编译
 ```
 
-\begin{center}
-\includegraphics[width=0.8\textwidth]{1_ls.png}
+![实验文件就绪](1_ls.png)
 
-\vspace{0.2cm}
-\textit{图 1：实验文件就绪}
-\end{center}
+<p align="center"><i>图 1：实验文件就绪</i></p>
 
-\begin{center}
-\includegraphics[width=0.8\textwidth]{2_make.png}
+![编译成功](2_make.png)
 
-\vspace{0.2cm}
-\textit{图 2：执行 make clean all 编译成功}
-\end{center}
+<p align="center"><i>图 2：执行 make clean all 编译成功</i></p>
 
 \newpage
 
@@ -63,7 +55,6 @@ diff hello-1.txt hello-2.txt | head -n 40
 
 终端部分输出差异如下（`<` 代表可执行文件，`>` 代表目标文件）：
 
-\begin{tcolorbox}[colback=gray!10, colframe=gray!60, title=\textbf{终端输出差异}]
 ```text
 < Disassembly of section .init:
 < 08049000 <_init>:
@@ -75,17 +66,15 @@ diff hello-1.txt hello-2.txt | head -n 40
 >    0:	55                   	push   ebp
 >    1:	89 e5                	mov    ebp,esp
 ```
-\end{tcolorbox}
 
 **2. 结果分析与思考**
 
 观察两份 `objdump` 的输出，最直观的感受是：在 `hello.o` 文件里，代码调用了 `printf`、`malloc` 等外部函数时，`call` 指令后面跟的地址全是 `0`。而在最终生成的 `hello` 文件里，这些位置都填上了真实的虚拟地址（如 `0x804xxxx`）。
 
-\begin{tcolorbox}[colback=blue!5!white, colframe=blue!50!black, title=\textbf{原因分析}]
-这是因为我之前理论课上学过的：编译器只负责把 C 代码翻译成汇编，它并不知道外部函数最终会加载到内存的哪里。因此，在生成 `.o` 文件时，它只能先填个 `0` 占位。只有等链接器（Linker）进场，把所有目标文件打包在一起，并分配了最终的运行地址后，才会把这些占位符替换成真实的地址。
-
-另外，`.o` 文件的代码段起始地址通常是从 `0x0` 开始算偏移，而最终生成的可执行文件，由于加了 `-no-pie` 参数，它被固定分配到了 `0x08049000` 这段高的虚拟内存区域。
-\end{tcolorbox}
+> **原因分析**
+> 这是因为编译器只负责把 C 代码翻译成汇编，它并不知道外部函数最终会加载到内存的哪里。因此，在生成 `.o` 文件时，它只能先填个 `0` 占位。只有等链接器（Linker）进场，把所有目标文件打包在一起，并分配了最终的运行地址后，才会把这些占位符替换成真实的地址。
+>
+> 另外，`.o` 文件的代码段起始地址通常是从 `0x0` 开始算偏移，而最终生成的可执行文件，由于加了 `-no-pie` 参数，它被固定分配到了 `0x08049000` 这段高的虚拟内存区域。
 
 \newpage
 
@@ -97,38 +86,25 @@ diff hello-1.txt hello-2.txt | head -n 40
 
 由于 `puts` 是打印字符串的函数，所以压入栈的 `0x80b4014` 就是 `"Hello World."` 这个字符串在虚拟内存中的首地址。
 
-\begin{center}
-\includegraphics[width=0.7\textwidth]{4_gdb.png}
+![GDB 调试](4_gdb.png)
 
-\vspace{0.2cm}
-\textit{图 3：GDB 反汇编查找字符串地址}
-\end{center}
+<p align="center"><i>图 3：GDB 反汇编查找字符串地址</i></p>
 
 **2. 使用 readelf 查找程序头表**
 
-知道内存地址后，我们需要搞清楚操作系统是如何把它从硬盘加载进来的。执行 `readelf -l bar` 查看段表：
+知道内存地址后，我们需要搞清楚操作系统是如何把它从硬盘加载进来的。执行 `readelf -l bar` 查看段表，找到包含目标地址 `0x80b4014` 的 `LOAD` 段后，提取出以下关键信息：
 
-\begin{tcolorbox}[colback=gray!10, colframe=gray!60, title=\textbf{Program Headers (部分)}]
 ```text
 Type   Offset   VirtAddr   PhysAddr   FileSiz  MemSiz   Flg Align
 LOAD   0x06c000 0x080b4000 0x080b4000 0x31710  0x31710  R   0x1000
 ```
-\end{tcolorbox}
 
-\begin{tcolorbox}[colback=blue!5!white, colframe=blue!50!black, title=\textbf{数据提取}]
-找到包含目标地址 `0x80b4014` 的 `LOAD` 段后，我们得出：
-\begin{itemize}
-    \item 文件偏移（Offset） = \texttt{0x06c000}
-    \item 虚拟地址（VirtAddr） = \texttt{0x080b4000}
-\end{itemize}
-\end{tcolorbox}
+- 文件偏移（Offset） = `0x06c000`
+- 虚拟地址（VirtAddr） = `0x080b4000`
 
-\begin{center}
-\includegraphics[width=0.8\textwidth]{5_readelf.png}
+![readelf 查看段表](5_readelf.png)
 
-\vspace{0.2cm}
-\textit{图 4：readelf 查看程序头表}
-\end{center}
+<p align="center"><i>图 4：readelf 查看程序头表</i></p>
 
 **3. 计算并验证文件偏移**
 
@@ -144,39 +120,34 @@ LOAD   0x06c000 0x080b4000 0x080b4000 0x31710  0x31710  R   0x1000
 xxd -s 0x06c014 -l 16 bar
 ```
 
-\begin{tcolorbox}[colback=gray!10, colframe=gray!60, title=\textbf{xxd 验证结果}]
+输出结果成功在右侧的 ASCII 区域显示出 `Hello World.`，说明我们从内存地址逆向计算文件物理偏移的思路完全正确！
+
 ```text
 0006c014: 4865 6c6c 6f20 576f 726c 642e 0063 203d  Hello World..c =
 ```
-\end{tcolorbox}
 
-右侧的 ASCII 字符成功显示出 `Hello World.`，说明我们从内存地址逆向计算文件物理偏移的思路完全正确！
+![xxd 验证](6_xxd.png)
 
-\begin{center}
-\includegraphics[width=0.8\textwidth]{6_xxd.png}
-
-\vspace{0.2cm}
-\textit{图 5：xxd 成功验证字符串位置}
-\end{center}
+<p align="center"><i>图 5：xxd 成功验证字符串位置</i></p>
 
 \newpage
 
 # 四、 问题与解答
 
-\begin{tcolorbox}[colback=cyan!5!white, colframe=cyan!50!black, title=\textbf{Q1. 尝试用自己的话简单解释 Program Counter (或称 Instruction Pointer) 是什么？}]
-\textbf{答：}在 x86 架构中它通常被称为 EIP 寄存器。你可以把它理解为一个永远指向“下一条指令”的指针。CPU 执行程序的过程，就是不停地按照 EIP 指向的地址去内存里把指令取出来并执行。每执行完一条指令，EIP 会自动加上该指令的长度，跳到下一条指令的位置。
-\end{tcolorbox}
+**Q1. 尝试用自己的话简单解释 Program Counter (或称 Instruction Pointer) 是什么？**
 
-\begin{tcolorbox}[colback=cyan!5!white, colframe=cyan!50!black, title=\textbf{Q2. 说说段在进程加载中所起到的作用。}]
-\textbf{答：}段（Segment）起到了“按需搬运”和“权限隔离”的作用。操作系统根据 Program Headers 里的标记，把文件里的内容映射到内存中。比如只读的代码段会被赋予 `R E`（可读可执行）权限，防止程序运行时被恶意篡改；而数据段会被赋予 `RW`（可读写）权限，用来存放我们定义的全局变量。
-\end{tcolorbox}
+> **答：**在 x86 架构中它通常被称为 EIP 寄存器。你可以把它理解为一个永远指向“下一条指令”的指针。CPU 执行程序的过程，就是不停地按照 EIP 指向的地址去内存里把指令取出来并执行。每执行完一条指令，EIP 会自动加上该指令的长度，跳到下一条指令的位置。
 
-\begin{tcolorbox}[colback=cyan!5!white, colframe=cyan!50!black, title=\textbf{Q3. 二进制中的 4865 6c6c ... 是怎么对应到 Hello World 的？}]
-\textbf{答：}计算机底层存储的都是二进制（即字节）。为了方便显示，`xxd` 用十六进制把它们展示了出来。字符 `H` 在 ASCII 码表中对应的十进制是 72，十六进制就是 `48`。同理，`e` 是 `65`。因此，连续的字母在文件中就是连续排列的 ASCII 码字节流：`48 65 6c 6c 6f ...`，最后的 `00` 是 C 语言中约定的字符串结束符 `\0`。
-\end{tcolorbox}
+**Q2. 说说段在进程加载中所起到的作用。**
+
+> **答：**段（Segment）起到了“按需搬运”和“权限隔离”的作用。操作系统根据 Program Headers 里的标记，把文件里的内容映射到内存中。比如只读的代码段会被赋予 `R E`（可读可执行）权限，防止程序运行时被恶意篡改；而数据段会被赋予 `RW`（可读写）权限，用来存放我们定义的全局变量。
+
+**Q3. 二进制中的 4865 6c6c ... 是怎么对应到 Hello World 的？**
+
+> **答：**计算机底层存储的都是二进制（即字节）。为了方便显示，`xxd` 用十六进制把它们展示了出来。字符 `H` 在 ASCII 码表中对应的十进制是 72，十六进制就是 `48`。同理，`e` 是 `65`。因此，连续的字母在文件中就是连续排列的 ASCII 码字节流：`48 65 6c 6c 6f ...`，最后的 `00` 是 C 语言中约定的字符串结束符 `\0`。
 
 # 五、 实验总结
 
 这次实验让我对平时经常写的 C 语言代码有了全新的认识。以前只知道代码点一下运行就能出结果，现在明白了从 `.c` 源码到 `.o` 文件，再到内存里的进程，中间经历了极其严谨的重定位和映射过程。
 
-尤其是最后用 `xxd` 在二进制文件里成功挖出 `Hello World` 字符串的那一刻，非常有成就感。这让我真正理解了程序头表（Program Headers）、虚拟地址（VirtAddr）和文件偏移（Offset）之间的物理联系，也为后续的逆向分析与调试打下了扎实的基础。
+尤其是最后用 `xxd` 在二进制文件里成功挖出 `Hello World` 字符串的那一刻，非常有成就感。这让我真正理解了程序头表、虚拟地址和文件偏移之间的物理联系，也为后续的逆向分析打下了基础。
