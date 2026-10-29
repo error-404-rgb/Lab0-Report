@@ -1,16 +1,25 @@
 ---
 title: "计算机系统基础Ⅱ Lab0 - 实验环境配置与基本概念"
-author: "姓名：[你的姓名]  \n学号：[你的学号]"
+author: "姓名：范佳艺"
 date: "2026年10月29日"
-geometry: margin=1in
+geometry: margin=2.5cm
 fontsize: 12pt
 linestretch: 1.5
-documentclass: article
+header-includes:
+  - \usepackage{xcolor}
+  - \usepackage{tcolorbox}
+  - \usepackage{hyperref}
+  - \hypersetup{colorlinks=true, linkcolor=blue, urlcolor=blue, filecolor=magenta}
+  - \newtcolorbox{codebox}{colback=gray!10!white, colframe=gray!60!black, boxrule=0.5pt, arc=2pt, left=5pt, right=5pt, top=5pt, bottom=5pt}
+  - \newtcolorbox{infobox}{colback=blue!5!white, colframe=blue!60!black, boxrule=0.5pt, arc=2pt}
 ---
+
+\tableofcontents
+\newpage
 
 # 一、 实验环境配置过程与截图
 
-1. **虚拟机与系统环境**：使用 VirtualBox 安装了提供的 Kubuntu 镜像。在配置过程中由于显卡 3D 加速冲突导致黑屏，通过修改显示控制器为 `VMSVGA` 并关闭 3D 加速后系统恢复正常。
+1. **虚拟机与系统环境**：使用 VirtualBox 安装了提供的 Kubuntu 镜像。
 
 2. **共享文件夹配置**：在 VirtualBox 设置中添加共享文件夹，并在 Ubuntu 内通过 `mount` 命令成功挂载。
 
@@ -40,6 +49,7 @@ diff hello-1.txt hello-2.txt | head -n 40
 
 终端输出的部分差异结果如下（左侧为可执行文件，右侧为目标文件）：
 
+::: {.codebox}
 ```text
 < Disassembly of section .init:
 < 08049000 <_init>:
@@ -52,13 +62,17 @@ diff hello-1.txt hello-2.txt | head -n 40
 >    0:	55                   	push   ebp
 >    1:	89 e5                	mov    ebp,esp
 ```
+:::
 
 **2. 结果分析**
 
 通过对比反汇编结果，发现可重定位目标文件（`.o`）和最终的可执行文件主要有以下区别：
 
-> *   **外部函数调用地址不同**：在 `hello.o` 中，调用 `printf`、`malloc` 等外部函数时，`call` 指令后面的地址是 `0`（占位符），因为此时未链接。而在 `hello` 中，链接器已经将这些地址重定位为真实的虚拟内存地址（如 `0x804xxxx`）。
-> *   **段起始地址不同**：`hello.o` 的 `.text` 代码段起始偏移量通常从 `0x0` 开始；而最终的 `hello` 文件被分配了固定的虚拟地址（如 `0x08049000`）。
+::: {.infobox}
+**分析结论：**
+*   **外部函数调用地址不同**：在 `hello.o` 中，调用 `printf`、`malloc` 等外部函数时，`call` 指令后面的地址是 `0`（占位符），因为此时未链接。而在 `hello` 中，链接器已经将这些地址重定位为真实的虚拟内存地址（如 `0x804xxxx`）。
+*   **段起始地址不同**：`hello.o` 的 `.text` 代码段起始偏移量通常从 `0x0` 开始；而最终的 `hello` 文件被分配了固定的虚拟地址（如 `0x08049000`）。
+:::
 
 \newpage
 
@@ -76,8 +90,10 @@ diff hello-1.txt hello-2.txt | head -n 40
 
 执行 `readelf -l bar`，找到包含 `0x80b4014` 的 `LOAD` 段。记录该段的以下信息：
 
-> *   文件偏移（Offset） = `0x06c000`
-> *   虚拟地址（VirtAddr） = `0x080b4000`
+::: {.infobox}
+*   文件偏移（Offset） = `0x06c000`
+*   虚拟地址（VirtAddr） = `0x080b4000`
+:::
 
 ![readelf 查看段表](5_readelf.png)
 
@@ -95,11 +111,11 @@ diff hello-1.txt hello-2.txt | head -n 40
 xxd -s 0x06c014 -l 16 bar
 ```
 
-输出结果成功显示了目标字符串：
-
+::: {.codebox}
 ```text
 0006c014: 4865 6c6c 6f20 576f 726c 642e 0063 203d  Hello World..c =
 ```
+:::
 
 ![xxd 验证](6_xxd.png)
 
@@ -109,20 +125,24 @@ xxd -s 0x06c014 -l 16 bar
 
 # 四、 问题与解答
 
+::: {.infobox}
 **Q1. 尝试用自己的话简单解释 Program Counter (或称 Instruction Pointer) 是什么？**
 
-> **答**：Program Counter（程序计数器，x86 中称 EIP）是 CPU 内部的一个特殊寄存器。它像一个指针，永远保存着下一条将要执行的指令在内存中的地址。CPU 不断地读取 PC 指向的指令、执行，并更新 PC，使程序按顺序流转。
+**答**：Program Counter（程序计数器，x86 中称 EIP）是 CPU 内部的一个特殊寄存器。它像一个指针，永远保存着下一条将要执行的指令在内存中的地址。CPU 不断地读取 PC 指向的指令、执行，并更新 PC，使程序按顺序流转。
+:::
 
+::: {.infobox}
 **Q2. 说说段在进程加载中所起到的作用。**
 
-> **答**：段在加载时起映射和权限保护的作用。操作系统根据 Program Headers 将文件映射到内存；且不同段有不同属性，如代码段（只读可执行防篡改），数据段（可读写存变量），实现了内存的安全隔离。
+**答**：段在加载时起映射和权限保护的作用。操作系统根据 Program Headers 将文件映射到内存；且不同段有不同属性，如代码段（只读可执行防篡改），数据段（可读写存变量），实现了内存的安全隔离。
+:::
 
+::: {.infobox}
 **Q3. 二进制中的 4865 6c6c ... 是怎么对应到 Hello World 的？**
 
-> **答**：计算机底层使用 ASCII 码存储字符。例如 `H` 的十六进制 ASCII 码是 `0x48`。字符串在内存中是将每个字符的 ASCII 码按顺序连续排列：`48 65 6c 6c 6f 20 57 6f 72 6c 64 2e`，末尾的 `00` 是字符串结束标志。
+**答**：计算机底层使用 ASCII 码存储字符。例如 `H` 的十六进制 ASCII 码是 `0x48`。字符串在内存中是将每个字符的 ASCII 码按顺序连续排列：`48 65 6c 6c 6f 20 57 6f 72 6c 64 2e`，末尾的 `00` 是字符串结束标志。
+:::
 
-# 五、 实验总结与遇到的问题
-
-在本次实验中，我遇到了 VirtualBox 3D 加速与 Kubuntu 桌面环境冲突导致黑屏的问题。通过在 GRUB 中配置 `nomodeset` 临时启动，并修改显示控制器最终救回系统。
+# 五、 实验总结
 
 通过亲手逆向计算字符串在 ELF 文件中的偏移，我对程序头表、虚拟地址、文件偏移之间的关系有了非常具象的认识，明白了程序运行时的内存数据是如何从硬盘上的二进制文件中“搬运”过来的。
