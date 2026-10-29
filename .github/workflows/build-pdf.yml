@@ -18,7 +18,15 @@ jobs:
 
       - name: Build PDF
         run: |
-          pandoc report.md -o Lab0-姓名-学号.pdf --pdf-engine=xelatex -V CJKmainfont="Noto Sans CJK SC" --toc
+          pandoc report.md -o Lab0-姓名-学号.pdf \
+            --pdf-engine=xelatex \
+            -V CJKmainfont="Noto Sans CJK SC" \
+            -V mainfont="Noto Sans CJK SC" \
+            -V monofont="Noto Sans Mono CJK SC" \
+            --highlight-style=tango \
+            --toc \
+            -V colorlinks=true \
+            -V linkcolor=blue
 
       - name: Upload PDF
         uses: actions/upload-artifact@v4
