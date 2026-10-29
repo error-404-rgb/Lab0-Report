@@ -20,13 +20,14 @@ jobs:
         run: |
           pandoc report.md -o Lab0-姓名-学号.pdf \
             --pdf-engine=xelatex \
-            -V CJKmainfont="Noto Sans CJK SC" \
-            -V mainfont="Noto Sans CJK SC" \
+            -V CJKmainfont="Noto Serif CJK SC" \
+            -V mainfont="Noto Serif CJK SC" \
             -V monofont="Noto Sans Mono CJK SC" \
             --highlight-style=tango \
             --toc \
             -V colorlinks=true \
-            -V linkcolor=blue
+            -V linkcolor=blue \
+            -V geometry:margin=2.5cm
 
       - name: Upload PDF
         uses: actions/upload-artifact@v4
